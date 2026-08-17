@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>md2card 风格陈列馆</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* ============ 变量与基础 ============ */
+  :root{
+    --bg:#ffffff;
+    --bg-soft:#fafafa;
+    --ink:#1a1a1a;
+    --ink-2:#555555;
+    --ink-3:#9a9a9a;
+    --line:#ececec;
+    --line-2:#f0f0f0;
+    --accent:#1a1a1a;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.04), 0 2px 6px rgba(0,0,0,.05);
+    --shadow-md:0 6px 18px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04);
+    --shadow-lg:0 28px 70px rgba(0,0,0,.16), 0 10px 24px rgba(0,0,0,.08);
+    --radius:14px;
+    --radius-lg:18px;
+    --ease:cubic-bezier(.22,.61,.36,1);
+    --ease-back:cubic-bezier(.34,1.56,.64,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+    background:var(--bg);color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.6;
+  }
+  img{display:block;max-width:100%}
+  button{font-family:inherit;cursor:pointer;border:none;background:none}
+  ::selection{background:#1a1a1a;color:#fff}
+
+  .wrap{max-width:1320px;margin:0 auto;padding:0 32px}
+
+  /* ============ HEADER ============ */
+  header.site{padding:80px 0 60px;text-align:center}
+  header.site .eyebrow{
+    font-size:11px;letter-spacing:.25em;text-transform:uppercase;
+    color:#888;font-weight:500;margin-bottom:18px;
+  }
+  header.site h1{
+    font-family:"Noto Serif SC","Source Han Serif SC","Songti SC","SimSun",serif;
+    font-size:clamp(32px,4.8vw,52px);font-weight:500;letter-spacing:.08em;
+    line-height:1.2;margin-bottom:18px;
+  }
+  header.site p.sub{color:var(--ink-2);font-size:16px;max-width:560px;margin:0 auto}
+
+  /* ============ TOOLBAR ============ */
+  #toolbar{
+    position:sticky;top:0;z-index:40;
+    background:rgba(255,255,255,.82);
+    backdrop-filter:saturate(180%) blur(14px);
+    -webkit-backdrop-filter:saturate(180%) blur(14px);
+    border-bottom:1px solid transparent;
+    transition:border-color .3s var(--ease), box-shadow .3s var(--ease);
+  }
+  #toolbar.stuck{border-color:var(--line);box-shadow:0 1px 0 rgba(0,0,0,.02)}
+  .toolbar-inner{
+    display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+    padding:16px 32px;max-width:1320px;margin:0 auto;
+  }
+  .search-box{position:relative;flex:1;min-width:220px;max-width:360px}
+  .search-box svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink-3);pointer-events:none}
+  #search{
+    width:100%;padding:11px 16px 11px 42px;
+    border:1px solid var(--line);border-radius:999px;
+    font-size:14px;color:var(--ink);background:#fff;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  #search:focus{outline:none;border-color:#1a1a1a;box-shadow:0 0 0 3px rgba(0,0,0,.06)}
+  #search::placeholder{color:var(--ink-3)}
+
+  #filters{display:flex;gap:10px;flex-wrap:wrap}
+  #filters button{
+    padding:6px 16px;border-radius:999px;font-size:12px;font-weight:500;
+    letter-spacing:.05em;
+    color:var(--ink-2);background:transparent;border:1px solid #ddd;
+    transition:all .2s var(--ease);
+  }
+  #filters button:hover{border-color:#999;color:var(--ink)}
+  #filters button.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+
+  #count{margin-left:auto;font-size:13px;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  /* ============ GRID ============ */
+  main#grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+    gap:28px;
+    padding:40px 32px 80px;max-width:1320px;margin:0 auto;
+    align-items: stretch; /* 确保所有卡片高度一致 */
+  }
+
+  /* ============ CARD 缩略卡 ============ */
+  .card{
+    position:relative;border-radius:var(--radius);
+    overflow:hidden;background:#fff;
+    box-shadow:var(--shadow-sm);
+    transition:transform .35s var(--ease), box-shadow .35s var(--ease), opacity .4s var(--ease);
+    cursor:pointer;will-change:transform;
+    opacity:0;transform:translateY(18px);
+    display:flex;flex-direction:column;height:100%;
+  }
+  .card.in{opacity:1;transform:translateY(0)}
+  .card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);cursor:zoom-in}
+  .card.hidden{opacity:0;transform:scale(.92);pointer-events:none;height:0;margin:0;padding:0;overflow:hidden}
+  .card.removed{display:none}
+
+  .card-index{
+    font-size:10px;letter-spacing:.15em;color:#b0b0b0;
+    margin-bottom:6px;font-weight:500;
+  }
+
+  .thumb{position:relative;overflow:hidden;background:#f2f2f2;aspect-ratio: 4/5}
+  .thumb img{
+    width:100%;height:100%;object-fit:cover;object-position:top;
+    display:block;will-change:transform;transition:transform .6s var(--ease);
+  }
+  .card:hover .thumb img{transform:scale(1.03)}
+
+  .thumb-info{
+    padding:18px 18px 16px;background:#fff;
+    display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+  }
+  .info-left{min-width:0;flex:1}
+  .card-name{font-size:16px;font-weight:600;letter-spacing:-.01em;line-height:1.25;margin-bottom:3px;color:var(--ink)}
+  .card-name-en{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#b0b0b0;font-weight:500}
+  .card-tagline{font-size:13px;color:#555;margin-top:10px;line-height:1.7;font-weight:400;
+    display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .info-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0;padding-top:2px}
+  .chip{
+    font-size:11px;padding:3px 9px;border-radius:999px;
+    background:rgba(26,26,26,.06);color:var(--ink-2);font-weight:500;
+    white-space:nowrap;
+  }
+  .palette{display:flex;gap:3px}
+  .palette i{width:11px;height:11px;border-radius:50%;display:block;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+
+  /* ============ DETAIL 详情浮层（点击展开） ============ */
+  #mask{
+    position:fixed;inset:0;z-index:55;background:rgba(0,0,0,.5);
+    opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s;
+  }
+  #mask.show{opacity:1;visibility:visible}
+
+  #detail{
+    position:fixed;z-index:60;
+    top:50%;left:50%;
+    width:min(1120px,95vw);max-height:min(640px,86vh);
+    transform-origin:center center;
+    background:#fff;border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-lg);
+    opacity:0;visibility:hidden;
+    transform:translate(-50%,-50%) scale(.92) translateY(12px);
+    transition:opacity .35s var(--ease), transform .4s var(--ease-back), visibility .35s;
+    overflow:hidden;display:flex;flex-direction:column;
+  }
+  #detail.show{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1) translateY(0)}
+
+  #close-btn{
+    position:absolute;top:16px;right:16px;z-index:70;
+    width:36px;height:36px;border-radius:50%;
+    background:rgba(255,255,255,.95);box-shadow:var(--shadow-sm);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--ink);font-size:20px;line-height:1;
+    transition:transform .2s var(--ease);
+  }
+  #close-btn:hover{transform:scale(1.1);background:#fff}
+
+  .detail-header{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:14px 22px;border-bottom:1px solid var(--line-2);flex-shrink:0;
+  }
+  .detail-name-en{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+  .detail-cat-chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .detail-cat-chip{
+    font-size:11px;padding:3px 10px;border-radius:999px;
+    background:rgba(26,26,26,.08);color:var(--ink-2);font-weight:500;white-space:nowrap;
+  }
+
+  .detail-body{display:flex;flex:1;min-height:0}
+  .detail-left{
+    width:260px;flex:0 0 260px;padding:22px;overflow-y:auto;
+    border-right:1px solid var(--line-2);
+  }
+  .detail-md{
+    flex:1;min-width:0;overflow-y:auto;background:#faf7f2;
+    border-right:1px solid var(--line-2);
+  }
+  .detail-md-header{
+    position:sticky;top:0;z-index:2;
+    padding:14px 18px;background:#faf7f2;
+    border-bottom:1px solid var(--line-2);
+    font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-3);font-weight:600;
+  }
+  .detail-md pre{
+    margin:0;padding:18px;
+    font-family:"SF Mono", "JetBrains Mono", "Menlo", monospace;
+    font-size:12px;line-height:1.7;color:#333;
+    white-space:pre-wrap;word-break:break-word;
+  }
+  .detail-md code{font-family:inherit}
+  .detail-name{font-size:24px;font-weight:600;letter-spacing:-.01em;margin-bottom:16px;line-height:1.2}
+  .detail-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:8px}
+  .detail-ref-wrap{margin-bottom:18px}
+  .detail-ref{
+    width:100%;max-height:200px;object-fit:contain;border-radius:10px;
+    background:#f7f7f7;display:block;
+    box-shadow:0 1px 3px rgba(0,0,0,.06);
+  }
+  .detail-metaphor{
+    font-size:13px;color:var(--ink-2);line-height:1.65;
+    padding:12px 14px;background:#f7f7f7;border-radius:8px;
+    border-left:2px solid var(--ink);margin-bottom:18px;
+  }
+  .detail-elements{list-style:none;margin-bottom:18px}
+  .detail-elements li{
+    font-size:12.5px;color:var(--ink-2);padding:5px 0 5px 16px;position:relative;line-height:1.4;
+  }
+  .detail-elements li::before{
+    content:"";position:absolute;left:0;top:11px;width:5px;height:5px;border-radius:50%;background:var(--ink);
+  }
+  .detail-palette{display:flex;gap:6px}
+  .detail-palette i{width:18px;height:18px;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+
+  .detail-right{
+    flex:1;min-width:0;overflow-y:auto;background:#fafafa;
+    scroll-behavior:auto;position:relative;
+  }
+  .detail-right img{
+    display:block;width:100%;height:auto;
+  }
+  .scroll-indicator{
+    position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    font-size:10px;letter-spacing:.15em;text-transform:uppercase;
+    color:rgba(0,0,0,.35);pointer-events:none;
+    animation:indicatorFade 4s ease-out forwards;
+    z-index:5;
+  }
+  .scroll-indicator svg{animation:bounceDown 1.8s ease-in-out infinite}
+  .scroll-indicator.hide{display:none}
+  @keyframes indicatorFade{
+    0%{opacity:0;transform:translateX(-50%) translateY(10px)}
+    15%{opacity:1;transform:translateX(-50%) translateY(0)}
+    85%{opacity:1}
+    100%{opacity:0;transform:translateX(-50%) translateY(6px)}
+  }
+  @keyframes bounceDown{
+    0%,100%{transform:translateY(0)}
+    50%{transform:translateY(4px)}
+  }
+
+  /* 滚动条美化 */
+  .detail-left::-webkit-scrollbar,.detail-right::-webkit-scrollbar,.detail-md::-webkit-scrollbar{width:8px}
+  .detail-left::-webkit-scrollbar-thumb,.detail-right::-webkit-scrollbar-thumb,.detail-md::-webkit-scrollbar-thumb{background:#d8d8d8;border-radius:4px}
+  .detail-left::-webkit-scrollbar-track,.detail-right::-webkit-scrollbar-track,.detail-md::-webkit-scrollbar-track{background:transparent}
+
+  /* ============ MODAL 移动端全屏 ============ */
+  #mask{
+    position:fixed;inset:0;z-index:55;background:rgba(0,0,0,.5);
+    opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s;
+  }
+  #mask.show{opacity:1;visibility:visible}
+  #close-btn{
+    position:fixed;z-index:62;top:16px;right:16px;
+    width:40px;height:40px;border-radius:50%;
+    background:rgba(255,255,255,.92);box-shadow:var(--shadow-md);
+    display:none;align-items:center;justify-content:center;
+    color:var(--ink);font-size:22px;line-height:1;
+  }
+  #close-btn.show{display:flex}
+
+  /* ============ EMPTY 空状态 ============ */
+  #empty{
+    grid-column:1/-1;text-align:center;padding:80px 20px;color:var(--ink-3);
+    display:none;
+  }
+  #empty.show{display:block}
+  #empty .big{font-size:40px;margin-bottom:12px;opacity:.4}
+
+  /* ============ FOOTER ============ */
+  footer.site{border-top:1px solid var(--line);padding:48px 0;text-align:center}
+  footer.site .divider{width:40px;height:1px;background:var(--ink-3);margin:0 auto 20px;opacity:.4}
+  footer.site p{font-size:13px;color:var(--ink-3);letter-spacing:.05em}
+  footer.site .signature{
+    margin-top:12px;
+    font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;
+    font-size:11px;font-weight:400;letter-spacing:.18em;
+    color:#9a9a9a;text-transform:uppercase;
+  }
+
+  /* ============ TUTORIAL 使用教程 ============ */
+  .tutorial{
+    max-width:1100px;margin:0 auto;padding:40px 32px 0;
+  }
+  .tutorial-card{
+    display:flex;align-items:center;gap:32px;
+    padding:28px 32px;
+    background:#fafaf8;border:1px solid var(--line-2);border-radius:var(--radius);
+    transition:border-color .25s var(--ease), box-shadow .25s var(--ease);
+  }
+  .tutorial-card:hover{border-color:#c8c8c8;box-shadow:var(--shadow-sm)}
+  .tutorial-text{flex:1;min-width:0}
+  .tutorial-eyebrow{
+    font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink-3);font-weight:600;margin-bottom:8px;
+  }
+  .tutorial-title{
+    font-size:18px;font-weight:600;color:var(--ink);margin-bottom:8px;
+    letter-spacing:-.01em;line-height:1.3;
+  }
+  .tutorial-desc{
+    font-size:13px;color:var(--ink-2);line-height:1.6;margin-bottom:14px;
+  }
+  .tutorial-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .tutorial-btn{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:7px 16px;border-radius:999px;
+    font-size:12px;font-weight:500;letter-spacing:.03em;
+    cursor:pointer;transition:all .2s var(--ease);
+    text-decoration:none;
+  }
+  .tutorial-btn.primary{
+    background:#1a1a1a;color:#fff;border:1px solid #1a1a1a;
+  }
+  .tutorial-btn.primary:hover{background:#000;transform:translateY(-1px)}
+  .tutorial-btn.ghost{
+    background:transparent;color:var(--ink-2);border:1px solid #ddd;
+  }
+  .tutorial-btn.ghost:hover{border-color:#999;color:var(--ink)}
+  .tutorial-thumbs{
+    display:flex;gap:8px;flex-shrink:0;cursor:pointer;
+  }
+  .tutorial-thumbs img{
+    width:64px;height:48px;object-fit:cover;border-radius:6px;
+    border:1px solid var(--line-2);
+    transition:transform .2s var(--ease), box-shadow .2s var(--ease);
+  }
+  .tutorial-thumbs:hover img{box-shadow:var(--shadow-sm)}
+  .tutorial-thumbs:hover img:hover{transform:translateY(-2px)}
+
+  /* ============ TUTORIAL MODAL ============ */
+  #tutorial-modal{
+    position:fixed;z-index:60;top:50%;left:50%;
+    width:min(960px,94vw);max-height:min(88vh,880px);
+    transform-origin:center center;
+    background:#fff;border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-lg);
+    opacity:0;visibility:hidden;
+    transform:translate(-50%,-50%) scale(.92) translateY(12px);
+    transition:opacity .35s var(--ease), transform .4s var(--ease-back), visibility .35s;
+    overflow:hidden;display:flex;flex-direction:column;
+  }
+  #tutorial-modal.show{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1) translateY(0)}
+  .tutorial-modal-header{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:16px 24px;border-bottom:1px solid var(--line-2);flex-shrink:0;
+  }
+  .tutorial-modal-header h3{
+    font-size:16px;font-weight:600;letter-spacing:-.01em;color:var(--ink);
+  }
+  .tutorial-modal-header a{
+    font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-2);text-decoration:none;font-weight:500;
+    padding:5px 12px;border:1px solid var(--line);border-radius:999px;
+    transition:all .2s var(--ease);
+  }
+  .tutorial-modal-header a:hover{border-color:#1a1a1a;color:#1a1a1a}
+  .tutorial-modal-body{
+    flex:1;overflow-y:auto;padding:28px 24px 40px;background:#fafaf8;
+    scroll-behavior:auto;
+  }
+  .tutorial-step{margin-bottom:32px}
+  .tutorial-step:last-child{margin-bottom:0}
+  .tutorial-step-num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:26px;height:26px;border-radius:50%;
+    background:#1a1a1a;color:#fff;font-size:12px;font-weight:600;
+    margin-right:10px;vertical-align:middle;
+  }
+  .tutorial-step-title{
+    font-size:14px;font-weight:600;color:var(--ink);
+    vertical-align:middle;letter-spacing:-.005em;
+  }
+  .tutorial-step-desc{
+    font-size:12.5px;color:var(--ink-2);line-height:1.6;
+    margin:6px 0 12px 36px;
+  }
+  .tutorial-step img{
+    width:100%;height:auto;border-radius:8px;display:block;
+    box-shadow:0 2px 12px rgba(0,0,0,.08);
+    border:1px solid var(--line-2);
+  }
+  .tutorial-modal-body::-webkit-scrollbar{width:8px}
+  .tutorial-modal-body::-webkit-scrollbar-thumb{background:#d8d8d8;border-radius:4px}
+  .tutorial-modal-body::-webkit-scrollbar-track{background:transparent}
+
+  /* ============ 响应式 ============ */
+  @media (max-width:768px){
+    .wrap{padding:0 20px}
+    header.site{padding:48px 0 28px}
+    main#grid{grid-template-columns:1fr;padding:28px 20px 60px;gap:20px}
+    .card{height:360px}
+    .toolbar-inner{padding:12px 20px;gap:12px}
+    .search-box{max-width:none;flex:1 1 100%}
+    #count{margin-left:0;width:100%;text-align:left}
+
+    /* 移动端详情变全屏模态 */
+    #detail{
+      width:100%!important;height:100%!important;max-height:100%!important;
+      top:0!important;left:0!important;transform:none!important;transform-origin:50% 100%!important;
+    }
+    #detail.show{transform:none!important}
+    .detail-body{flex-direction:column}
+    .detail-left{width:100%;border-right:none;border-bottom:1px solid var(--line-2);max-height:42vh}
+    .detail-md{width:100%;border-right:none;border-bottom:1px solid var(--line-2);max-height:35vh;flex:0 0 auto}
+    .detail-right{width:100%!important;flex:1;min-height:0}
+    .detail-right img{width:100%}
+
+    /* 移动端教程区块 */
+    .tutorial{padding:28px 20px 0}
+    .tutorial-card{flex-direction:column;align-items:flex-start;gap:18px;padding:22px 20px}
+    .tutorial-thumbs{width:100%;overflow-x:auto;padding-bottom:4px}
+    .tutorial-thumbs img{width:80px;height:60px;flex-shrink:0}
+    #tutorial-modal{
+      width:100%!important;height:100%!important;max-height:100%!important;
+      top:0!important;left:0!important;transform:none!important;
+    }
+    #tutorial-modal.show{transform:none!important}
+  }
+
+  /* ============ 减少动效 ============ */
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition-duration:.01ms!important}
+    .card{opacity:1!important;transform:none!important}
+    .thumb img{transform:none!important}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <div class="eyebrow">md2card · Style Gallery</div>
+    <h1>风格典藏馆</h1>
+    <p class="sub">十数种从参考视觉沉淀而来的 CSS 卡片气质<br>轻触展签，查看每一件作品的来处与完整效果</p>
+  </div>
+</header>
+
+<div id="toolbar">
+  <div class="toolbar-inner">
+    <div class="search-box">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="search" type="search" placeholder="搜索风格名 / 隐喻 / 要素…" autocomplete="off">
+    </div>
+    <div id="filters">
+      <button data-cat="all" class="active">全部</button>
+      <button data-cat="编辑页">编辑页</button>
+      <button data-cat="色块派">色块派</button>
+      <button data-cat="手绘风">手绘风</button>
+      <button data-cat="自然系">自然系</button>
+    </div>
+    <span id="count">共 0 套</span>
+  </div>
+</div>
+
+<main id="grid">
+  <div id="empty">
+    <div class="big">∅</div>
+    <p>没有匹配的风格，换个关键词试试。</p>
+  </div>
+</main>
+
+<section class="tutorial">
+  <div class="tutorial-card">
+    <div class="tutorial-text">
+      <div class="tutorial-eyebrow">使用教程 · HOW TO USE</div>
+      <h3 class="tutorial-title">把这些风格用起来</h3>
+      <p class="tutorial-desc">四步即可在 md2card 上应用本典藏馆中的任意风格模板。</p>
+      <div class="tutorial-actions">
+        <button class="tutorial-btn primary" id="open-tutorial">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          查看图文教程
+        </button>
+        <a class="tutorial-btn ghost" href="https://md2card.com/zh" target="_blank" rel="noopener">
+          前往 md2card.com
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="tutorial-thumbs" id="tutorial-thumbs">
+      <img src="assets/tutorial/step-1.png" alt="步骤1缩略图">
+      <img src="assets/tutorial/step-2.png" alt="步骤2缩略图">
+      <img src="assets/tutorial/step-3.png" alt="步骤3缩略图">
+      <img src="assets/tutorial/step-4.png" alt="步骤4缩略图">
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+      <div class="wrap">
+        <div class="divider"></div>
+        <p>md2card 风格典藏馆 · 十数种可阅读的视觉方式</p>
+        <p class="signature">策展 · 小勺子</p>
+      </div>
+    </footer>
+
+<div id="tutorial-modal">
+  <div class="tutorial-modal-header">
+    <h3>使用教程 · 四步上手</h3>
+    <a href="https://md2card.com/zh" target="_blank" rel="noopener">前往 md2card.com →</a>
+  </div>
+  <div class="tutorial-modal-body" id="tutorial-body"></div>
+</div>
+
+<div id="mask"></div>
+<div id="detail"></div>
+<button id="close-btn" aria-label="关闭">×</button>
+
+<script>
+(function(){
+  "use strict";
+  const grid = document.getElementById('grid');
+  const searchInput = document.getElementById('search');
+  const filters = document.getElementById('filters');
+  const countEl = document.getElementById('count');
+  const emptyEl = document.getElementById('empty');
+  const detail = document.getElementById('detail');
+  const mask = document.getElementById('mask');
+  const closeBtn = document.getElementById('close-btn');
+  const toolbar = document.getElementById('toolbar');
+
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const canHover = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  let DATA = [];
+  let activeCategory = 'all';
+  let searchTerm = '';
+
+  /* ---------- 工具 ---------- */
+  function paletteHTML(arr, big){
+    const cls = big ? 'detail-palette' : 'palette';
+    return '<div class="'+cls+'">'+arr.map(c=>'<i style="background:'+c+'"></i>').join('')+'</div>';
+  }
+  function chipsHTML(cats, cls){
+    cls = cls || 'chip';
+    return cats.map(c=>'<span class="'+cls+'">'+esc(c)+'</span>').join('');
+  }
+  function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+  /* ---------- 渲染卡片 ---------- */
+  function renderCards(){
+    const frag = document.createDocumentFragment();
+    DATA.forEach((s,i)=>{
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.dataset.id = s.id;
+      card.dataset.category = s.category.join(' ');
+      card.style.transitionDelay = (i%10 * 0.05) + 's';
+      
+      const index = String(i + 1).padStart(2, '0');
+      card.innerHTML =
+        '<div class="thumb">'+
+          '<img src="assets/effects/'+esc(s.effect)+'" alt="'+esc(s.name)+'效果图" loading="lazy">'+
+        '</div>'+
+        '<div class="thumb-info">'+
+          '<div class="info-left">'+
+            '<div class="card-index">No. ' + index + '</div>' +
+            '<h3 class="card-name">'+esc(s.name)+'</h3>'+
+            '<span class="card-name-en">'+esc(s.nameEn)+'</span>'+
+            '<p class="card-tagline">'+esc(s.tagline)+'</p>'+
+          '</div>'+
+          '<div class="info-right">'+
+            chipsHTML(s.category)+
+            paletteHTML(s.palette)+
+          '</div>'+
+        '</div>';
+      attachCardEvents(card, s);
+      frag.appendChild(card);
+    });
+    grid.insertBefore(frag, emptyEl);
+    observeCards();
+    updateCount();
+  }
+
+  /* ---------- 入场动画 ---------- */
+  let io;
+  function observeCards(){
+    if(io) io.disconnect();
+    io = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{
+        if(e.isIntersecting){
+          e.target.classList.add('in');
+          io.unobserve(e.target);
+        }
+      });
+    },{rootMargin:'0px 0px -8% 0px', threshold:0.05});
+    document.querySelectorAll('.card').forEach(c=>io.observe(c));
+  }
+
+  /* ---------- 详情内容填充 ---------- */
+  function fillDetail(s){
+    detail.innerHTML =
+      '<div class="detail-header">'+
+        '<span class="detail-name-en">'+esc(s.nameEn)+'</span>'+
+        '<div class="detail-cat-chips">'+chipsHTML(s.category, 'detail-cat-chip')+'</div>'+
+      '</div>'+
+      '<div class="detail-body">'+
+        '<div class="detail-left">'+
+          '<h2 class="detail-name">'+esc(s.name)+'</h2>'+
+          '<div class="detail-label">灵感来源 · INSPIRATION</div>'+
+          '<div class="detail-ref-wrap">'+
+            '<img class="detail-ref" src="assets/references/'+esc(s.reference)+'" alt="'+esc(s.name)+'参考图" loading="lazy">'+
+          '</div>'+
+          '<p class="detail-metaphor">'+esc(s.metaphor)+'</p>'+
+          '<div class="detail-label">核心要素</div>'+
+          '<ul class="detail-elements">'+s.elements.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>'+
+          '<div class="detail-label">主色</div>'+
+          paletteHTML(s.palette, true)+
+        '</div>'+
+        '<div class="detail-md">'+
+          '<div class="detail-md-header">'+esc(s.markdown)+'</div>'+
+          '<pre class="md-content">加载中…</pre>'+
+        '</div>'+
+        '<div class="detail-right">'+
+          '<img src="assets/effects/'+esc(s.effect)+'" alt="'+esc(s.name)+'完整效果图" loading="lazy">'+
+          '<div class="scroll-indicator" id="scroll-ind">'+
+            '<span>下滑查看</span>'+
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    
+    fetch('assets/markdown/' + s.markdown)
+      .then(r => r.ok ? r.text() : Promise.reject(r.status))
+      .then(text => {
+        const el = detail.querySelector('.md-content');
+        if (el) el.textContent = text;
+      })
+      .catch(() => {
+        const el = detail.querySelector('.md-content');
+        if (el) el.textContent = '（Markdown 文件加载失败）';
+      });
+    
+    setTimeout(() => {
+      const rightPane = detail.querySelector('.detail-right');
+      const ind = document.getElementById('scroll-ind');
+      if (rightPane && ind) {
+        rightPane.addEventListener('scroll', function onScroll(){
+          ind.classList.add('hide');
+          rightPane.removeEventListener('scroll', onScroll);
+        }, { once: true });
+      }
+    }, 100);
+  }
+
+  /* ---------- 卡片事件 ---------- */
+  function attachCardEvents(card, s){
+    card.addEventListener('click', (e)=>{
+      e.preventDefault();
+      openDetailModal(s);
+    });
+  }
+
+  // 详情关闭逻辑：点击遮罩 / 关闭按钮 / ESC
+  function openDetailModal(s){
+    fillDetail(s);
+    // 重置动画
+    detail.style.transition = 'none';
+    detail.style.transform = 'translate(-50%,-50%) scale(.92) translateY(12px)';
+    // 强制回流以重置动画
+    void detail.offsetWidth; 
+    detail.style.transition = '';
+
+    mask.classList.add('show');
+    closeBtn.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    
+    requestAnimationFrame(()=>{
+      detail.classList.add('show');
+    });
+  }
+
+  function closeDetailModal(){
+    detail.classList.remove('show');
+    mask.classList.remove('show');
+    closeBtn.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  mask.addEventListener('click', closeAllModals);
+  closeBtn.addEventListener('click', closeAllModals);
+  document.addEventListener('keydown', e=>{ 
+    if(e.key==='Escape'){
+      if(detail.classList.contains('show') || tutorialModal.classList.contains('show')){
+        closeAllModals();
+      }
+    }
+  });
+
+  /* ---------- 教程模态框 ---------- */
+  const tutorialModal = document.getElementById('tutorial-modal');
+  const tutorialBody = document.getElementById('tutorial-body');
+  const openTutorialBtn = document.getElementById('open-tutorial');
+  const tutorialThumbs = document.getElementById('tutorial-thumbs');
+
+  const TUTORIAL_STEPS = [
+    {img:'step-1.png', title:'点击「立即开始」', desc:'进入 md2card 首页，点击中央的「立即开始」按钮进入编辑器。'},
+    {img:'step-2.png', title:'创建本地主题', desc:'在主题管理中新建一个本地主题，作为承载自定义风格的容器。'},
+    {img:'step-3.png', title:'复制 CSS 代码并保存', desc:'将本典藏馆中对应风格的 CSS 代码粘贴进主题编辑器并保存。'},
+    {img:'step-4.png', title:'选择已配置好的模板', desc:'从模板列表中挑选刚保存的风格模板，即可应用到你的内容。'}
+  ];
+
+  function fillTutorial(){
+    tutorialBody.innerHTML = TUTORIAL_STEPS.map((s,i)=>
+      '<div class="tutorial-step" id="tut-step-'+(i+1)+'">'+
+        '<span class="tutorial-step-num">'+(i+1)+'</span>'+
+        '<span class="tutorial-step-title">'+esc(s.title)+'</span>'+
+        '<p class="tutorial-step-desc">'+esc(s.desc)+'</p>'+
+        '<img src="assets/tutorial/'+s.img+'" alt="步骤'+(i+1)+'：'+esc(s.title)+'" loading="lazy">'+
+      '</div>'
+    ).join('');
+  }
+
+  function openTutorialModal(scrollTo){
+    if(!tutorialBody.children.length) fillTutorial();
+    tutorialModal.style.transition = 'none';
+    tutorialModal.style.transform = 'translate(-50%,-50%) scale(.92) translateY(12px)';
+    void tutorialModal.offsetWidth;
+    tutorialModal.style.transition = '';
+
+    mask.classList.add('show');
+    closeBtn.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    requestAnimationFrame(()=>{
+      tutorialModal.classList.add('show');
+      if(scrollTo){
+        requestAnimationFrame(()=>{
+          const target = document.getElementById('tut-step-'+scrollTo);
+          if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+        });
+      }
+    });
+  }
+
+  function closeAllModals(){
+    detail.classList.remove('show');
+    tutorialModal.classList.remove('show');
+    mask.classList.remove('show');
+    closeBtn.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  openTutorialBtn.addEventListener('click', ()=>openTutorialModal());
+  tutorialThumbs.addEventListener('click', e=>{
+    if(e.target.tagName==='IMG'){
+      const idx = [...tutorialThumbs.children].indexOf(e.target) + 1;
+      openTutorialModal(idx);
+    }
+  });
+
+  /* ---------- 搜索筛选 ---------- */
+  function matchStyle(s){
+    if(activeCategory !== 'all' && !s.category.includes(activeCategory)) return false;
+    if(searchTerm){
+      const hay = (s.name+' '+s.nameEn+' '+s.tagline+' '+s.metaphor+' '+s.category.join(' ')+' '+s.elements.join(' ')).toLowerCase();
+      if(!hay.includes(searchTerm)) return false;
+    }
+    return true;
+  }
+
+  function applyFilter(){
+    const cards = document.querySelectorAll('.card');
+    let visible = 0;
+    cards.forEach(c=>{
+      const s = DATA.find(x=>x.id===c.dataset.id);
+      const ok = matchStyle(s);
+      c.classList.toggle('removed', !ok);
+      if(ok) visible++;
+    });
+    updateCount(visible);
+    emptyEl.classList.toggle('show', visible===0);
+  }
+
+  // FLIP 过滤动画
+  function flipFilter(){
+    if(reduceMotion){ applyFilter(); return; }
+    const cards = [...document.querySelectorAll('.card')];
+    const first = new Map();
+    cards.forEach(c=>{ if(!c.classList.contains('removed')) first.set(c, c.getBoundingClientRect()); });
+    applyFilter();
+    cards.forEach(c=>{
+      if(c.classList.contains('removed')) return;
+      const f = first.get(c); if(!f) return;
+      const l = c.getBoundingClientRect();
+      const dx = f.left - l.left, dy = f.top - l.top;
+      if(dx || dy){
+        c.style.transition = 'none';
+        c.style.transform = 'translate('+dx+'px,'+dy+'px)';
+        requestAnimationFrame(()=>{
+          c.style.transition = '';
+          c.style.transform = '';
+        });
+      }
+    });
+  }
+
+  function updateCount(n){
+    const total = n!==undefined ? n : DATA.length;
+    countEl.textContent = '共 ' + total + ' 套';
+  }
+
+  // 搜索
+  let searchTimer = null;
+  searchInput.addEventListener('input', ()=>{
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(()=>{
+      searchTerm = searchInput.value.trim().toLowerCase();
+      flipFilter();
+    }, 150);
+  });
+
+  // 分类
+  filters.addEventListener('click', e=>{
+    const btn = e.target.closest('button[data-cat]');
+    if(!btn) return;
+    filters.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeCategory = btn.dataset.cat;
+    flipFilter();
+  });
+
+  /* ---------- 工具栏吸顶状态 ---------- */
+  window.addEventListener('scroll', ()=>{
+    toolbar.classList.toggle('stuck', window.scrollY > 8);
+  }, {passive:true});
+
+  /* ---------- 轻微视差 ---------- */
+  let parallaxRAF = null;
+  function parallax(){
+    if(reduceMotion) return;
+    const vh = window.innerHeight;
+    document.querySelectorAll('.card:not(.removed)').forEach(c=>{
+      const r = c.getBoundingClientRect();
+      if(r.bottom < 0 || r.top > vh) return;
+      const center = r.top + r.height/2;
+      const offset = (center - vh/2) / vh;
+      const img = c.querySelector('.thumb img');
+      if(img) img.style.transform = 'translateY('+ (offset * -12).toFixed(1) +'px)';
+    });
+    parallaxRAF = null;
+  }
+  if(!reduceMotion && canHover){
+    window.addEventListener('scroll', ()=>{
+      if(!parallaxRAF) parallaxRAF = requestAnimationFrame(parallax);
+    }, {passive:true});
+  }
+
+  /* ---------- 窗口变化时重定位浮层 ---------- */
+  window.addEventListener('resize', ()=>{
+    // 点击模式下无需重定位
+  });
+
+  /* ---------- 启动 ---------- */
+  fetch('styles.json?t=' + Date.now())
+    .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(data=>{
+      DATA = data.styles;
+      renderCards();
+    })
+    .catch(err=>{
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:80px 20px;color:#999">'+
+        '<p style="font-size:15px;margin-bottom:8px">数据加载失败</p>'+
+        '<p style="font-size:13px">'+esc(err.message)+'</p>'+
+        '<p style="font-size:12px;margin-top:12px;color:#bbb">请通过本地服务器预览：python3 -m http.server</p>'+
+        '</div>';
+    });
+})();
+</script>
+</body>
+</html>
