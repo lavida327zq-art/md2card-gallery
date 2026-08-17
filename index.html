@@ -201,7 +201,16 @@
     border-bottom:1px solid var(--line-2);
     font-size:10px;letter-spacing:.16em;text-transform:uppercase;
     color:var(--ink-3);font-weight:600;
+    display:flex;align-items:center;justify-content:space-between;
   }
+  /* 桌面端：隐藏折叠装饰（</> 图标 / 展开按钮），Markdown 永不收起 */
+  .detail-md-header .md-toggle{display:none}
+  .detail-md-header .md-title::before{display:none}
+  .detail-md-header .md-title-text::before{
+    content:'源文件 · ';
+  }
+  .detail-md .md-content{display:block!important}
+  .detail-md:not(.expanded) .md-content{display:block!important}
   .detail-md pre{
     margin:0;padding:18px;
     font-family:"SF Mono", "JetBrains Mono", "Menlo", monospace;
@@ -405,38 +414,130 @@
   .tutorial-modal-body::-webkit-scrollbar-thumb{background:#d8d8d8;border-radius:4px}
   .tutorial-modal-body::-webkit-scrollbar-track{background:transparent}
 
-  /* ============ 响应式 ============ */
+  /* ============ 响应式（手机版） ============ */
   @media (max-width:768px){
+    /* —— 整体 —— */
     .wrap{padding:0 20px}
     header.site{padding:48px 0 28px}
-    main#grid{grid-template-columns:1fr;padding:28px 20px 60px;gap:20px}
-    .card{height:360px}
-    .toolbar-inner{padding:12px 20px;gap:12px}
+    header.site h1{font-size:28px;line-height:1.3}
+    header.site .sub{font-size:14px;line-height:1.8}
+    main#grid{grid-template-columns:1fr;padding:28px 16px 60px;gap:18px}
+    .toolbar-inner{padding:12px 16px;gap:10px;flex-wrap:wrap}
     .search-box{max-width:none;flex:1 1 100%}
-    #count{margin-left:0;width:100%;text-align:left}
+    #filters{overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px}
+    #filters button{flex-shrink:0}
+    #count{margin-left:0;width:100%;text-align:left;font-size:11px}
 
-    /* 移动端详情变全屏模态 */
+    /* —— 卡片：自适应高度，不再固定 360px —— */
+    .card{height:auto;aspect-ratio:auto;flex-direction:column}
+    .thumb{aspect-ratio:4/5;min-height:0}
+
+    /* —— 详情弹窗：全屏 + 单列纵向叙事（一个滚动条）—— */
     #detail{
-      width:100%!important;height:100%!important;max-height:100%!important;
-      top:0!important;left:0!important;transform:none!important;transform-origin:50% 100%!important;
+      width:100%!important;height:100%!important;max-height:100dvh!important;
+      top:0!important;left:0!important;transform:none!important;
+      transform-origin:50% 100%!important;
+      border-radius:0!important;
     }
     #detail.show{transform:none!important}
-    .detail-body{flex-direction:column}
-    .detail-left{width:100%;border-right:none;border-bottom:1px solid var(--line-2);max-height:42vh}
-    .detail-md{width:100%;border-right:none;border-bottom:1px solid var(--line-2);max-height:35vh;flex:0 0 auto}
-    .detail-right{width:100%!important;flex:1;min-height:0}
-    .detail-right img{width:100%}
+    .detail-header{padding:14px 16px;flex-wrap:wrap;gap:8px}
+    .detail-name-en{font-size:10px;order:1}
+    .detail-cat-chips{order:2;margin-left:auto}
+    .detail-close{width:34px;height:34px;order:3;flex:0 0 34px}
 
-    /* 移动端教程区块 */
-    .tutorial{padding:28px 20px 0}
-    .tutorial-card{flex-direction:column;align-items:flex-start;gap:18px;padding:22px 20px}
+    /* 关键：body 改为 column + 整页滚动，不再分区固定高度 */
+    .detail-body{
+      flex-direction:column;
+      overflow-y:auto!important;
+      -webkit-overflow-scrolling:touch;
+      scroll-behavior:auto;
+    }
+    .detail-body::-webkit-scrollbar{display:none}
+
+    /* 左栏：灵感来源 — 自然高度 */
+    .detail-left{
+      width:100%!important;flex:0 0 auto!important;flex-shrink:0;
+      padding:20px 18px 22px!important;
+      border-right:none;border-bottom:6px solid #f0f0ec!important;
+      overflow:visible!important;max-height:none!important;
+    }
+    .detail-ref{margin-bottom:14px}
+    .detail-ref img{max-width:260px;margin:0 auto}
+
+    /* 中栏：Markdown 源 — 默认折叠，tap 展开，弱化处理 */
+    .detail-md{
+      width:100%!important;flex:0 0 auto!important;
+      border-right:none;border-bottom:6px solid #f0f0ec!important;
+      max-height:none!important;overflow:visible!important;
+    }
+    .detail-md-header{
+      position:static;top:auto;z-index:auto;
+      padding:10px 16px!important;background:#faf7f2;
+      backdrop-filter:none;
+      display:flex;align-items:center;justify-content:space-between;
+      cursor:pointer;-webkit-tap-highlight-color:transparent;
+      user-select:none;
+      border-bottom:none!important;
+    }
+    /* 移动端：撤销桌面端的「源文件·」前缀，避免重复 */
+    .detail-md-header .md-title-text::before{content:none!important}
+    .detail-md-header .md-title{
+      font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+      color:#8c8277;font-weight:600;
+      display:flex;align-items:center;gap:6px;flex:1;min-width:0;
+    }
+    .detail-md-header .md-title::before{
+      content:'</>';font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      font-size:9px;background:rgba(140,130,119,.12);
+      padding:1px 5px;border-radius:3px;color:#8c8277;letter-spacing:0;flex-shrink:0;
+      display:inline-block!important;
+    }
+    .detail-md-header .md-title-text{
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;
+    }
+    .detail-md-header .md-toggle{
+      display:inline-flex!important;align-items:center;gap:3px;
+      font-size:10.5px;color:#5c4a51;font-weight:500;
+      padding:3px 9px;border-radius:999px;
+      background:rgba(92,74,81,.08);
+      transition:all .2s ease;flex-shrink:0;
+    }
+    .detail-md-header .md-toggle svg{width:9px;height:9px;transition:transform .25s ease}
+    /* 移动端：默认收起 — 优先级最高 */
+    .detail-md:not(.expanded) > .md-content{display:none!important}
+    .detail-md.expanded .md-toggle svg{transform:rotate(180deg)}
+    /* 展开状态的源码 */
+    .md-content{padding:12px 16px 18px;font-size:12.5px;line-height:1.75!important}
+
+    /* 右栏：效果图 — 自然高度，完整展开不再内部滚动 */
+    .detail-right{
+      width:100%!important;flex:0 0 auto!important;min-height:0!important;
+      overflow:visible!important;padding:20px 16px 40px!important;
+    }
+    .detail-right img{width:100%;max-width:none;margin:0 auto;display:block;box-shadow:0 4px 16px rgba(0,0,0,.1)}
+    .scroll-hint{display:none}
+
+    /* —— 教程区块 —— */
+    .tutorial{padding:28px 16px 0}
+    .tutorial-card{flex-direction:column;align-items:flex-start;gap:18px;padding:22px 18px}
+    .tutorial-title{font-size:16px}
+    .tutorial-desc{font-size:13px;line-height:1.7}
     .tutorial-thumbs{width:100%;overflow-x:auto;padding-bottom:4px}
-    .tutorial-thumbs img{width:80px;height:60px;flex-shrink:0}
+    .tutorial-thumbs img{width:72px;height:54px;flex-shrink:0}
     #tutorial-modal{
-      width:100%!important;height:100%!important;max-height:100%!important;
+      width:100%!important;height:100%!important;max-height:100dvh!important;
       top:0!important;left:0!important;transform:none!important;
+      border-radius:0!important;
     }
     #tutorial-modal.show{transform:none!important}
+    .tutorial-modal-header{padding:14px 18px}
+    .tutorial-modal-body{padding:20px 18px 36px}
+
+    /* —— 页脚 —— */
+    footer.site{padding:36px 20px 40px}
+    footer.site .line{width:40px}
+    footer.site .slogan{font-size:10.5px}
+    footer.site .signature{font-size:10px}
   }
 
   /* ============ 减少动效 ============ */
@@ -629,7 +730,10 @@
           paletteHTML(s.palette, true)+
         '</div>'+
         '<div class="detail-md">'+
-          '<div class="detail-md-header">'+esc(s.markdown)+'</div>'+
+          '<div class="detail-md-header" role="button" tabindex="0" aria-expanded="false">'+
+            '<div class="md-title"><span class="md-title-text">源文件 · '+esc(s.markdown)+'</span></div>'+
+            '<div class="md-toggle">展开源码<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>'+
+          '</div>'+
           '<pre class="md-content">加载中…</pre>'+
         '</div>'+
         '<div class="detail-right">'+
@@ -693,10 +797,40 @@
 
   function closeDetailModal(){
     detail.classList.remove('show');
+    detail.classList.remove('md-expanded');
     mask.classList.remove('show');
     closeBtn.classList.remove('show');
     document.body.style.overflow = '';
+    const md = detail.querySelector('.detail-md');
+    if(md){md.classList.remove('expanded');}
+    const header = detail.querySelector('.detail-md-header');
+    if(header){header.setAttribute('aria-expanded','false');}
   }
+
+  /* Markdown 区块展开/收起（仅移动端生效，桌面版不折叠） */
+  detail.addEventListener('click', function(e){
+    const header = e.target.closest('.detail-md-header');
+    if(!header) return;
+    const md = header.parentElement;
+    const isExpanded = md.classList.contains('expanded');
+    if(isExpanded){
+      md.classList.remove('expanded');
+      header.setAttribute('aria-expanded','false');
+      const toggle = header.querySelector('.md-toggle');
+      if(toggle) toggle.innerHTML = '展开源码<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+    } else {
+      md.classList.add('expanded');
+      header.setAttribute('aria-expanded','true');
+      const toggle = header.querySelector('.md-toggle');
+      if(toggle) toggle.innerHTML = '收起源码<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+    }
+  });
+  detail.addEventListener('keydown', function(e){
+    if((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('detail-md-header')){
+      e.preventDefault();
+      e.target.click();
+    }
+  });
 
   mask.addEventListener('click', closeAllModals);
   closeBtn.addEventListener('click', closeAllModals);
