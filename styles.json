@@ -142,6 +142,19 @@
       "reference": "literary-magazine-card.png",
       "effect": "literary-magazine-测试-card.png",
       "markdown": "literary-magazine-测试.md"
+    },
+    {
+      "id": "mac-editor",
+      "name": "Mac 编辑器卡片",
+      "nameEn": "Mac Editor",
+      "category": ["编辑页"],
+      "tagline": "模拟 macOS 窗口的亲切而专业的内容卡片",
+      "metaphor": "一个开在 macOS 桌面上的轻量编辑器窗口——三层柔影包裹着 14px 圆角，红黄绿三色信号灯在顶部灰条里静候，嵌入的代码编辑器有着柔和的语法高亮配色，整体亲切又专业。",
+      "elements": ["macOS 三层柔阴影", "44px 顶部灰色窗口栏", "红黄绿三色信号灯", "嵌入式代码编辑器", "柔和语法高亮配色"],
+      "palette": ["#FFFFFF", "#F6F6F8", "#FF5F57", "#34C749", "#6C72CB"],
+      "reference": "mac-editor-card.png",
+      "effect": "mac-editor-测试-card.png",
+      "markdown": "mac-editor-测试.md"
     }
   ]
 }
